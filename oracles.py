@@ -17,7 +17,7 @@ class Oracle:
         self.income_ = np.copy(income)
         self.lambd_ = np.copy(lambd)
         self.rho_ = np.copy(rho)
-        self.lipshitz_constant_ = np.linalg.eigvals(Sigma)[0]
+        self.lipshitz_constant_ = 2 * np.max(np.linalg.eigvals(Sigma))
 
     def func(self, x):
         return x.T @ self.Sigma_ @ x - \
