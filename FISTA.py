@@ -24,7 +24,7 @@ def FISTA(oracle, x_0, max_iter=100, trace=False):
         x_next = oracle.proximal_mapping(
             y_k - 1 / oracle.lipshitz_constant_ * oracle.grad(y_k))
         t_next = (1 + np.sqrt(1 + 4 * t_k ** 2)) / 2
-        y_k = x_k + (t_k - 1) / t_next * (x_k - x_next)
+        y_k = x_next + (t_k - 1) / t_next * (x_next - x_k)
         x_k = x_next
         t_k = t_next
 
