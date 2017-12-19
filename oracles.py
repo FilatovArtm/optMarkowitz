@@ -6,7 +6,6 @@ class Oracle:
         Oracle for next optimization problem
             x^T Sigma x - rho * income^T x + lambda || x ||_1 rightarrow min
             sum x_i  = 1
-            x_i geq 0
 
         func: value of the function
         grad: computes the gradient of the differantible part
@@ -32,7 +31,7 @@ class Oracle:
         y = cvxpy.Variable(len(x))
         obj = cvxpy.Minimize(self.lambd_ * cvxpy.norm1(y) +
                              self.lipshitz_constant_ / 2 * cvxpy.norm(y - x) ** 2)
-        constraints = [self.income_.T @ y >= self.rho_, cvxpy.sum_entries(y) == 1, y >= 0]
+        constraints = [cvxpy.sum_entries(y) == 1]
         problem = cvxpy.Problem(obj, constraints)
         problem.solve()
         return np.array(y.value).reshape(-1)
