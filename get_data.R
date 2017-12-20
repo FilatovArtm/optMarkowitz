@@ -5,28 +5,13 @@ start = '2014-03-31'
 end = '2014-06-30'
 
 codes = read.csv('stocks.csv', encoding = 'UTF-8', sep=',')[,2]
-getSymbols(Symbols = as.character(codes[3]),from = start, to = end)
-dates <- index(get(as.character(codes[3])))
-all_stocks_yahoo = data.frame(date = dates)
-
-# Get daily return of the asset 
-# get_prices <- function(x, start, end, source){
-#   return = c()
-#   tryCatch({
-#   prices = getSymbols(Symbols = as.character(x),from = start, to = end, 
-#                      auto.assign = FALSE, warnings = FALSE, src = source)[,c(1,4)]
-#   return = (prices[,2]/prices[,1])-1
-#   
-#   }, error=function(e){cat("ERROR :",conditionMessage(e), "\n") })
-#   return(return)
-# }
 
 get_prices <- function(x, start, end, source){
   return = c()
   tryCatch({
   prices = getSymbols(Symbols = as.character(x),from = start, to = end,
                      auto.assign = FALSE, warnings = FALSE, src = source)[,4]
-  return = diff(prices)/(prices[-(prices)])
+  return = diff(prices)/head(prices,-1)
 
   }, error=function(e){cat("ERROR :",conditionMessage(e), "\n") })
   return(return)
