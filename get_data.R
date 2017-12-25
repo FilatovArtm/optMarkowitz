@@ -2,7 +2,7 @@ library(quantmod)
 library(plyr)
 
 start = '2014-03-31'
-end = '2014-06-30'
+end = '2015-12-31'
 
 codes = read.csv('stocks.csv', encoding = 'UTF-8', sep=',')[,2]
 
@@ -30,6 +30,6 @@ missing_codes  <- as.character(codes[unlist(lapply(all_stocks, is.null),use.name
 stocks = do.call(cbind, all_stocks)
 stocks = as.data.frame(stocks)
 
-
-write.csv2(stocks, file = 'stocks_data.csv', row.names = T)
+all_stocks[['FNFV']]
+write.csv(stocks, file = 'stocks_data_year.csv', row.names = T, dec = '.')
   

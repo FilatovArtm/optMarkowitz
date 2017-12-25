@@ -6,11 +6,9 @@ class Oracle:
         Oracle for next optimization problem
             x^T Sigma x - rho * income^T x + lambda || x ||_1 rightarrow min
             sum x_i  = 1
-
         func: value of the function
         grad: computes the gradient of the differantible part
         proximal mapping: computes the constrained proximal operator
-
     '''
     def __init__(self, Sigma, income, lambd, rho):
         self.Sigma_ = np.copy(Sigma)
