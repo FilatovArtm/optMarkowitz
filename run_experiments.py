@@ -49,7 +49,7 @@ plt.clf()
 np.random.seed(4)
 
 results_our = []
-for i in range(5):
+for i in range(1):
     ns = np.arange(10, 1000, 80)
     result_our = []
     for n in ns:
@@ -62,10 +62,10 @@ for i in range(5):
 
     results_our.append(result_our)
 
-np.random.seed(4)
 
+np.random.seed(4)
 results_cvx = []
-for i in range(5):
+for i in range(1):
     ns = np.arange(10, 1000, 80)
     result_cvx = []
     for n in ns:
