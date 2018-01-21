@@ -1,0 +1,212 @@
+\documentclass[a4paper]{article}
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+
+%% Sets page size and margins
+\usepackage[a4paper,top=2cm,bottom=2.5cm,left=2cm,right=1.5cm,marginparwidth=1.75cm]{geometry}
+\usepackage{setspace}
+\setstretch{1.2}
+%% Useful packages
+
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{bm}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\title{Optimization of the sparse Markowitz portfolio problem with accelerated composite methods}
+\author{Ivan Barabanau\\Artem Filatov\\Anna Kuzina}
+
+\begin{document}
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Project description}
+\subsection{Problem statement}
+In this project we solve the following problem:
+\begin{equation*}
+\begin{aligned}
+& \underset{\mathbf{x}\,\in\,R^n}{\min}
+& & \mathbf{x}^\top\Sigma \mathbf{x} - \rho\cdot\mathbf{r}^\top \mathbf{x} + \lambda \cdot||\mathbf{x}||_{1} \\
+& \,\text{s.t.}
+& & \sum\limits_{i=1}^{n}x_i = 1
+\end{aligned}
+\end{equation*}
+
+\begin{itemize}
+\item $\Sigma$ - assets covariance matrix
+\item $\mathbf{r}$ - vector of assets returns
+\item $\mathbf{x}$ - vector of assets weights
+\item $\lambda$ - regularization coefficient
+\item $\rho$ - inverse risk aversion
+\end{itemize}
+The main idea behind this optimization task is to find market portfolio with high returns and, at the same time, with appropriate level of risk, that could be controlled by a risk aversion parameter $\frac{1}{\rho}$. Ideally, the more assets there are in the portfolio, the more diversified and profitable it can be. But that does not work in real life, because investors pay commission for all the transaction, and there is also extra costs that arise when we want to open short position (i.e. when $x_i < 0$). That is why we need to add regularization term and try to find not only optimal but also sparse portfolio.
+
+\subsection{Optimization methods}
+
+In our work we implemented three methods:
+\begin{itemize}
+\item Accelerated Proximal Gradient Descent
+\item FISTA (Fast Iterative Shrinkage-Thresholding Algorithm)
+\item ADMM (Alternating Direction Method of Multipliers
+\end{itemize}
+
+
+\subsubsection*{Accelerated Proximal Gradient Descent}
+Proximal mapping for initial problem
+\begin{equation*}
+\begin{aligned}
+\text{prox}_{L}(\mathbf{y}) = \underset{\sum x_i = 1}{\argmin}\{\lambda\|\mathbf{x}\|_1 +\frac{L}{2}\|\mathbf{x} - \mathbf{y}\|^2\}
+\end{aligned}
+\end{equation*}
+Gradient of the differentiable part
+\begin{equation*}
+\begin{aligned}
+\triangledown f(\mathbf{x}) = 2\Sigma \mathbf{x} - \rho\cdot \mathbf{r}
+\end{aligned}
+\end{equation*}
+Iteratively find a solution:
+\begin{equation*}
+\begin{aligned}
+&t_k = \text{num}\_\text{iter}\\
+&\mathbf{y}_{k} = \mathbf{x}_k + \frac{t_k-2}{t_k+1}(\mathbf{x}_k - \mathbf{x}_{k-1})\\
+&\mathbf{x}_{k+1} = \text{prox}_{L}(y_k - \frac1L \triangledown f(\mathbf{y}_k))
+\end{aligned}
+\end{equation*}
+
+\subsubsection*{Proximal operator}
+
+\begin{equation*}
+\begin{aligned}
+\text{prox}_{L}(\mathbf{y}) = \underset{\sum x_i = 1}{\argmin}\{\lambda\|\mathbf{x}\|_1 +\frac{L}{2}\|\mathbf{x} - \mathbf{y}\|^2\}
+\end{aligned}
+\end{equation*}
+\begin{enumerate}
+\item Application of the numerical methods to the given task can drammaticaly slow down the performance of the whole method.
+\item We implemeted the algorithm which solves this problem in $\mathcal{O} (n \log n)$ using FOC for Lagrangian and binary search.
+\end{enumerate}
+
+
+\subsubsection*{FISTA}
+This method is quite similar to the previous one, since it is also based on a proximal mapping. But instead of using gradient, on each step we just calculate proximal operator of the linear combination of two previous values of $x$.
+
+\begin{equation*}
+\begin{aligned}
+&\mathbf{x}_k = \text{prox}_{L}(\mathbf{y}_k)\\
+&t_{k+1} = \frac{1 + \sqrt{1+4t_k^2}}{2}\\
+&\mathbf{y}_{k+1} = \mathbf{x}_k + \frac{t_k-1}{t_{k+1}}(\mathbf{x}_k - \mathbf{x}_{k-1})
+\end{aligned}
+\end{equation*}
+
+\subsubsection*{ADMM}
+Reformulate the initial problem as:
+\begin{equation*}
+\begin{aligned}
+& \underset{\mathbf{x}\,\in\,\mathbb{R}^n}{\min}
+& & \mathbf{x}^\top\Sigma \mathbf{x} - \rho\cdot\mathbf{r}^\top \mathbf{x} + \lambda \cdot||\mathbf{v}||_{1} \,\,\, \,\text{s.t.} \sum\limits_{i=1}^{n}x_i = 1,\,\,\, \mathbf{x} =  \mathbf{v}\\
+\end{aligned}
+\end{equation*}
+Form the associated augmented Lagrangian:
+\begin{equation*}
+\mathcal{L}_{\eta}(\mathbf{x}, \mathbf{v}, \bm{\alpha}, \beta) = \mathcal{L}(\mathbf{x}, \mathbf{v}, \bm{\alpha}, \beta) + \eta\cdot\left(||\mathbf{x}-\mathbf{v}||^2_2 + \left(\sum\limits_{i=1}^n x_i - 1\right)^2\right)
+\end{equation*}
+Iteratively recalculate the solution:
+\begin{equation*}
+\begin{aligned}
+\mathbf{x}^{k+1} & = \underset{\mathbf{x}}{\argmin}\mathcal{L}_{\eta}\\
+\mathbf{v}^{k+1} & = \text{prox}_{\lambda/\eta}(\mathbf{x}^{k+1}+1/\eta\cdot\bm{\alpha}^{k})\\
+\bm{\alpha}^{k+1} & = \bm{\alpha}^{k}+\eta\cdot(\mathbf{x}^{k+1}-\mathbf{v}^{k+1})\\
+\beta^{k+1} & = \beta^{k} + \eta\cdot(\mathbf{x}^{k+1}\cdot\mathbf{e} - 1)
+\end{aligned}
+`\end{equation*}
+The advantage of this method is the absence of necessity to derive manually the formula for the proximal operator as a solution for the optimization task. Eventually, the proximal operator in this method is merely a shrinkage operator, while the constraints conditions are already included in the formed Lagrangian.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Experiments}
+\subsection{Data}
+
+The aim of the experiments is twofold. Firstly, it is highly important to compare the methods convergences on real-world dataset, as well as to find out, how profitable, in terms of the time, spent on achieving the optimum, is the derivation of the explicit solution to the proximal operator, comparing to the implicit numerical solution, obtained from the pythonic optimization packages. Secondly, to observe, how optimal Markowitz portfolio problem is solved for particular dataset, based on the problem reformulation, in terms of parameters variation.\newline
+For the sake of the real-world application, the experiments with daily stock's returns, were conducted. The dataset contains the returns of 149 companies, trading on NYSE in a following time interval: Q2 2014 to Q4 2015. There were no particular preferences for some companies or industries. All the data is obtained via open source financial aggregating system Yahoo finance.
+
+
+\subsection{Convergence}
+Firstly, we decided to compare convergence of different methods
+\begin{figure}[!h]
+\centering
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=0.95\linewidth]{exp_4}
+  \caption{\label{fig:proxy}CVXpy proxy vs Derived proxy}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=.95\linewidth]{exp_5}
+  \caption{\label{fig:conv}Convergence}
+\end{subfigure}
+\end{figure}
+
+\noindent The plot on the left-hand side compares two possible realizations of the methods described above. The blue line states for the FISTA algorithm with proximal operator calculations without explicit formula or algorithm, a.e. via cvxpy package, whilst two other graphs stand for FISTA and APGD algorithm with the explicitly derived formula for the proximal operator. It could be easily seen, that the improvement in time, while the algorithm converges to the solution, is highly significant. Methods with explicit proximal operator formula require much less time to converge.\newline
+The plot on the right-hand side compares the convergence time of the three declared methods with explicit formula for FISTA and APGD inside. Here follows two principal conclusions. Firstly, ADMM converges to the solution even faster than both other methods. Secondly, however, this is achieved at the expense of stability of the convergence rate. This could be explained by the presence of the additional parameter $\eta$ in ADMM, which determines how the modified Lagrangian varies from the initial one.
+
+\begin{figure}[!h]
+\centering
+  \includegraphics[width=0.7\linewidth]{exp_3}
+\caption{\label{fig:vsgurobi}Performance of our realization compared to GUROBI solver}
+\end{figure}
+
+\noindent The second round of the convergence experiments is devoted to the comparison of two APGD realization techniques, depending on the dimension of the data set. Here, we set aside the obtained dataset and find the solutions, given randomly initialized feasible datasets, varying there dimension. The results, plotted on the Figure \ref{fig:vsgurobi}, suggest for the superiority of the explicit proximal operator calculation to the pythonic optimizers in terms of convergence time. The shaded red graphs stand for the different algorithm start, while the bold line is their average.
+
+\subsection{Returns}
+In the second part of the experiments, we decided to look more precisely at optimal portfolios for different values of initial parameters. \\
+Figure \ref{fig:structure} depicts, how numbers of assets and their weights change with the growth of parameter$\lambda$. We can clearly see, that when $\lambda$ is close to zero, optimal portfolio consist of a wide range of shorted assets, which might be very expansive and risky to hold it in real life. But as value of $\lambda$ increases, portfolio becomes more sparse and weights of the assets included in it decrease dramatically.
+
+\begin{figure}[!h]
+\centering
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=.95\linewidth]{exp_1}
+  \caption{Portfolio weights}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=.95\linewidth]{exp_2} 
+  \caption{Number of non-zero stocks}
+\end{subfigure}
+\caption{\label{fig:structure}Portfolio structure depending on the regularization parameter}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{Contributions}
+\subsection{Ivan Barabanau}
+Studying ADMM algorithm technique and its implementation. Derivation of the proximal operator implicit solution. Conducting experiments with convergence properties.
+\subsection{Artem Filatov}
+Studying APGD algorithm technique and its implementation. Derivation and implementation of the proximal operator implicit solution. Final code optimization. Experiments with portfolio structure.
+\subsection{Anna Kuzina}
+Studying FISTA algorithm technique and its implementation. Data collection and preprocessing. Conducting experiments with Markowitz portfolio returns.
+
+\section{Links}
+Algorithms implementations as well as the conducted experiments are available here: \href{https://github.com/FilatovArtm/optMarkowitz}{GitHub}
+\begin{thebibliography}{} % Beamer does not support BibTeX so references must be inserted manually as below
+\bibitem[1]{p1} A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems (2009)
+\newblock A. Beck, M. Teboulle
+\bibitem[2]{p1} Sparse Portfolio Selection via the sorted $\ell_1$-Norm (2017)
+\newblock P. J. Kremer, S. Lee, M. Bogdan, S. Paterlini
+\bibitem[3]{p1} Smart Grid Risk Management (2015)
+\newblock C. Lopez
+\bibitem[4]{p1} Proximal Algorithms: Foundations and Trends in Optimization (2014)
+\newblock Neal Parikh and Stephen Boyd
+\end{thebibliography}
+
+\end{document}
