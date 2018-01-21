@@ -5,6 +5,9 @@ import numpy as np
 import cvxpy
 from datetime import datetime
 from xml.etree import ElementTree as ET
+import matplotlib
+matplotlib.use('Agg')
+
 from matplotlib import pyplot as plt
 from collections import defaultdict
 
