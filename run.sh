@@ -1,3 +1,3 @@
 #!/bin/bash
-cd python run_experiments.py;
-cd ../latex && pdflatex paper.tex && cp paper.pdf ../results/;
+python3 run_experiments.py;
+../usr/bin/pdflatex paper.tex && cp paper.pdf ../results/;
