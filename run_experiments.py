@@ -77,7 +77,7 @@ for i in range(5):
         cons = [cvxpy.sum_entries(x) == 1]
 
         start_time = datetime.now()
-        cvxpy.Problem(obj, cons).solve()
+        cvxpy.Problem(obj, cons).solve(solver='CVXOPT')
         result_cvx.append((datetime.now() - start_time).total_seconds())
 
     results_cvx.append(result_cvx)
